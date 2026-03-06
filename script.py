@@ -32,7 +32,7 @@ def start_udp_load(value):
     
 
 def start_tcp_load():
-    cmd = f"sudo himage pc4 iperf -c 10.0.4.20 -t 30"
+    cmd = f"sudo himage pc4 iperf -c 10.0.4.20 -t 10"
     saida = run(cmd)
     return saida
 
@@ -59,10 +59,14 @@ def stop_servers():
 def output_tshark():
     cmd = "sudo himage pc4 tshark -r fluxo.pcap -T fields -e tcp.len | awk '{s+=$1} END {print s}'"
     saida = []
-    saida[0] = run(cmd)
-    cmd = "tshark -r fluxo.pcap -T fields -e frame.len | awk '{s+=$1} END {print s}'"
-    saida[1] = run(cmd)
+    saida.append(run(cmd))
+    cmd = "sudo himage pc4 tshark -r fluxo.pcap -T fields -e frame.len | awk '{s+=$1} END {print s}'"
+    saida.append(run(cmd))
     return saida
+
+def stop_tcpdump():
+    cmd = "sudo himage pc4 pkill -f tcpdump"
+    run(cmd)
 
 # for alg, ber in combinacoes:
 
@@ -115,6 +119,9 @@ for repeticao in range(1,3):
     time.sleep(1)
     print("start tcp load")
     saida_iperf = start_tcp_load()
+    stop_tcpdump()
+    time.sleep(1)
+    ls = run("sudo himage pc4 ls -lh")
     saida_tshark = output_tshark()
     stop_servers()
 
@@ -122,6 +129,8 @@ for repeticao in range(1,3):
         f.write(saida_iperf)
 
     with open("tshark.txt", "a") as f:
-        f.write(saida_tshark)
+        f.write(ls)
+        for i in saida_tshark:
+            f.write(i)
 
 
